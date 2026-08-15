@@ -10,16 +10,16 @@
     "test": "vitest run --pool=forks --maxWorkers=1 --minWorkers=1"
   },
   "dependencies": {
+    "@types/node": "20.17.6",
+    "@types/react": "^19.0.3",
     "@langchain/langgraph": "^0.2.74",
     "next": "^15.1.6",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "typescript": "5.8.2"
   },
   "devDependencies": {
-    "@types/node": "^22.10.7",
-    "@types/react": "^19.0.3",
     "@types/react-dom": "^19.0.2",
-    "typescript": "^5.7.2",
     "vitest": "^3.0.5"
   }
 }
