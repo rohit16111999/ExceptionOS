@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { answer, process } from "@/lib/workflow";
-import { familyFromMessage } from "@/lib/integrations";
-import { store } from "@/lib/memory";
+import { answer, process } from "../../../../lib/workflow";
+import { familyFromMessage } from "../../../../lib/integrations";
+import { store } from "../../../../lib/memory";
 export async function POST(req:Request){try{const body=await req.json();const id=String(body.id||body.event_id||"");if(id&&store.events.some(e=>e.id===id))return NextResponse.json({ok:true,deduplicated:true});const text=String(body.text||body.message||"");const pending=store.cases.find(c=>c.status==="HUMAN_REQUIRED");if(pending&&text){await answer(pending);return NextResponse.json({ok:true,caseId:pending.id,resumed:true});}const family=familyFromMessage(text);if(!family)return NextResponse.json({ok:false,error:"Unsupported exception family"},{status:422});const c={id:"linq-"+(id||crypto.randomUUID()),family,customer:String(body.from||"Linq customer"),detail:text,status:"NEW" as const,attempts:0,humanUsed:false};await process(c);return NextResponse.json({ok:true,caseId:c.id});}catch{return NextResponse.json({ok:false,error:"Invalid webhook payload"},{status:400});}}
