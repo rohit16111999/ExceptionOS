@@ -1,0 +1,2 @@
+import { Case, Metrics } from "./types";
+export function evaluate(cases:Case[]):Metrics{const n=cases.length||1,resolved=cases.filter(x=>x.status==="RESOLVED");return {total:cases.length,autonomousRate:Math.round(resolved.filter(x=>!x.humanUsed).length/n*100),escalationRate:Math.round(cases.filter(x=>x.humanUsed).length/n*100),correctRate:Math.round(resolved.length/n*100),unsupportedRate:Math.round(cases.filter(x=>x.status==="HUMAN_REQUIRED").length/n*100),avgHuman:+(cases.filter(x=>x.humanUsed).length/n).toFixed(2)}}

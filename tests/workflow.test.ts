@@ -1,0 +1,5 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { answer, process } from "../lib/workflow";
+import { reset, seed, store } from "../lib/memory";
+import { evaluate } from "../lib/evaluation";
+describe("ExceptionOS learning loop",()=>{beforeEach(()=>seed());it("unknown exception escalates",async()=>{await process(store.cases[0]);expect(store.cases[0].status).toBe("HUMAN_REQUIRED")});it("human answer produces and persists skill",async()=>{await process(store.cases[0]);await answer(store.cases[0]);expect(store.skills).toHaveLength(1);expect(store.cases[0].status).toBe("RESOLVED")});it("analogous case resolves without human",async()=>{await process(store.cases[0]);await answer(store.cases[0]);await process(store.cases[1]);expect(store.cases[1].status).toBe("RESOLVED");expect(store.cases[1].humanUsed).toBe(false)});it("reset removes learned state",()=>{reset();expect(store.skills).toHaveLength(0)});it("calculates metrics",()=>{const m=evaluate([{...store.cases[0],status:"RESOLVED",humanUsed:false},{...store.cases[1],status:"HUMAN_REQUIRED",humanUsed:true}]);expect(m.autonomousRate).toBe(50);expect(m.escalationRate).toBe(50)})});
