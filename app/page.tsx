@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Integration = { status: "LIVE" | "DEMO" | "READY"; reason: string };
 type DashboardData = {
@@ -18,6 +18,8 @@ export default function Home() {
   const [data, setData] = useState<DashboardData>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [autoNotice, setAutoNotice] = useState("");
+  const autoCaseRef = useRef("");
 
   const load = useCallback(async () => {
     try {
@@ -65,6 +67,20 @@ export default function Home() {
   const criticApproved = active?.status === "RESOLVED";
   const integration = data?.integrations;
 
+  useEffect(() => {
+    if (!active || !isLinq || active.status !== "HUMAN_REQUIRED" || autoCaseRef.current === active.id) return;
+    autoCaseRef.current = active.id;
+    let launched = false;
+    const timer = window.setTimeout(async () => {
+      launched = true;
+      setAutoNotice("DEMO CORRECTION FALLBACK — Terac response payload unavailable");
+      await run("answer");
+      await new Promise((resolve) => window.setTimeout(resolve, 2400));
+      await run("analogous");
+    }, 5000);
+    return () => { if (!launched) { window.clearTimeout(timer); autoCaseRef.current = ""; } };
+  }, [active?.id, active?.status, isLinq]);
+
   const stages = [
     ["01", "INCOMING", active ? "complete" : "idle"],
     ["02", "MEMORY", memoryEvent ? "complete" : active ? "active" : "idle"],
@@ -101,6 +117,7 @@ export default function Home() {
       </section>
 
       {error && <div className="error-banner">SYSTEM NOTICE · {error}</div>}
+      {autoNotice && <div className="error-banner">{autoNotice}</div>}
 
       <section className={`customer-channel ${isLinq ? "live-inbound" : ""}`}>
         <div className="section-heading">
@@ -130,7 +147,7 @@ export default function Home() {
         <article className={`human-panel ${criticBlocked ? "attention" : ""}`}>
           <div className="panel-icon">!</div><p className="kicker">HUMAN REQUIRED</p><h3>{criticBlocked ? "Novel operational edge case detected." : "No active escalation"}</h3>
           <span className="evidence amber">TERAC {integration?.terac.status || "DEMO"}</span>
-          {active?.question ? <><div className="blocking-question"><small>MINIMUM BLOCKING QUESTION</small><p>{active.question}</p></div><p className="human-state">WAITING FOR HUMAN</p><button onClick={() => run("answer")} disabled={busy}>APPLY DEMO HUMAN CORRECTION</button><small className="truth-label">DEMO FALLBACK · no Terac credits spent</small></> : humanEvent ? <><div className="blocking-question received"><small>HUMAN RESPONSE RECEIVED</small><p>“{humanEvent.message}”</p></div><p className="human-state complete">CORRECTION COMPILED</p><small className="truth-label">DEMO FALLBACK RESPONSE · Terac connection remains available</small></> : <p className="panel-empty">The Policy Critic escalates only when retrieved operational knowledge is insufficient.</p>}
+          {active?.question ? <><div className="blocking-question"><small>MINIMUM BLOCKING QUESTION</small><p>{active.question}</p></div><p className="human-state">WAITING FOR HUMAN</p>{isLinq ? <><div className="auto-armed">AUTO FALLBACK ARMED · waiting 5 seconds for Terac payload</div><small className="truth-label">No paid Terac request is created by this fallback.</small></> : <><button onClick={() => run("answer")} disabled={busy}>APPLY DEMO HUMAN CORRECTION</button><small className="truth-label">DEMO FALLBACK · no Terac credits spent</small></>}</> : humanEvent ? <><div className="blocking-question received"><small>HUMAN RESPONSE RECEIVED</small><p>“{humanEvent.message}”</p></div><p className="human-state complete">CORRECTION COMPILED</p><small className="truth-label">DEMO FALLBACK RESPONSE · Terac connection remains available</small></> : <p className="panel-empty">The Policy Critic escalates only when retrieved operational knowledge is insufficient.</p>}
         </article>
 
         <article className={`skill-panel ${skill ? "learned" : ""}`}>
